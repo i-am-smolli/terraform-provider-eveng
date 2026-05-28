@@ -207,17 +207,20 @@ func (r *nodeResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 	tflog.Info(ctx, fmt.Sprintf("Created node %d", node.Id))
-	_, err = r.client.Node.GetNodeConfig(plan.LabPath.ValueString(), node.Id)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to get node config", err.Error())
-		return
+	hasConfig := !plan.Config.IsNull() && !plan.Config.IsUnknown() && plan.Config.ValueString() != ""
+	if hasConfig {
+		_, err = r.client.Node.GetNodeConfig(plan.LabPath.ValueString(), node.Id)
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to get node config", err.Error())
+			return
+		}
+		err = r.client.Node.UpdateNodeConfig(plan.LabPath.ValueString(), node.Id, plan.Config.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to update node config", err.Error())
+			return
+		}
+		node.Config = "1"
 	}
-	err = r.client.Node.UpdateNodeConfig(plan.LabPath.ValueString(), node.Id, plan.Config.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to update node config", err.Error())
-		return
-	}
-	node.Config = "1"
 	err = r.client.Node.UpdateNode(plan.LabPath.ValueString(), &node)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to update node config", err.Error())
@@ -300,11 +303,14 @@ func (r *nodeResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		return
 	}
 	node.Id = int(state.Id.ValueInt64())
-	node.Config = "1"
-	err = r.client.Node.UpdateNodeConfig(plan.LabPath.ValueString(), node.Id, plan.Config.ValueString())
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to update node config", err.Error())
-		return
+	hasConfig := !plan.Config.IsNull() && !plan.Config.IsUnknown() && plan.Config.ValueString() != ""
+	if hasConfig {
+		node.Config = "1"
+		err = r.client.Node.UpdateNodeConfig(plan.LabPath.ValueString(), node.Id, plan.Config.ValueString())
+		if err != nil {
+			resp.Diagnostics.AddError("Failed to update node config", err.Error())
+			return
+		}
 	}
 	err = r.client.Node.UpdateNode(plan.LabPath.ValueString(), &node)
 	if err != nil {

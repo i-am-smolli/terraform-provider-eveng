@@ -48,6 +48,31 @@ func TestAccNodeResource(t *testing.T) {
 	})
 }
 
+func TestAccNodeResourceLinuxWithoutConfig(t *testing.T) {
+	resource.Test(t, resource.TestCase{
+		PreCheck:                 func() { testAccPreCheck(t) },
+		ProtoV6ProviderFactories: testAccProtoV6ProviderFactories,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccNodeResourceLinuxConfig("linux-no-config"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("eveng_node.test", "lab_path", "/terraform-acceptance-test-node-linux.unl"),
+					resource.TestCheckResourceAttr("eveng_node.test", "name", "linux-no-config"),
+					resource.TestCheckResourceAttr("eveng_node.test", "template", "linux"),
+				),
+			},
+			{
+				Config: testAccNodeResourceLinuxConfig("linux-no-config-update"),
+				Check: resource.ComposeAggregateTestCheckFunc(
+					resource.TestCheckResourceAttr("eveng_node.test", "lab_path", "/terraform-acceptance-test-node-linux.unl"),
+					resource.TestCheckResourceAttr("eveng_node.test", "name", "linux-no-config-update"),
+					resource.TestCheckResourceAttr("eveng_node.test", "template", "linux"),
+				),
+			},
+		},
+	})
+}
+
 func testAccNodeResourceConfig(configurableAttribute string) string {
 	return fmt.Sprintf(`
 resource "eveng_lab" "test" {
@@ -61,6 +86,24 @@ resource "eveng_node" "test" {
   lab_path = eveng_lab.test.path
   name = %[1]q
   template = "vpcs"
+  type = "qemu"
+}
+`, configurableAttribute)
+}
+
+func testAccNodeResourceLinuxConfig(configurableAttribute string) string {
+	return fmt.Sprintf(`
+resource "eveng_lab" "test" {
+	name = "terraform-acceptance-test-node-linux"
+	author = "terraform-acctest"
+	body = "terraform acceptance test"
+	description = "terraform acceptance test"
+}
+
+resource "eveng_node" "test" {
+  lab_path = eveng_lab.test.path
+  name = %[1]q
+  template = "linux"
   type = "qemu"
 }
 `, configurableAttribute)
