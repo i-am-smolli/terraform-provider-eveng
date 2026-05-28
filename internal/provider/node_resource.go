@@ -7,6 +7,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sync"
 
 	"github.com/CorentinPtrl/evengsdk"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
@@ -22,6 +23,9 @@ var (
 	_ resource.Resource                = &nodeResource{}
 	_ resource.ResourceWithConfigure   = &nodeResource{}
 	_ resource.ResourceWithImportState = &nodeResource{}
+
+	// nodeTemplateCache caches node templates to reduce API calls
+	nodeTemplateCache = &sync.Map{}
 )
 
 // NewNodeResource is a helper function to simplify the provider implementation.
@@ -227,21 +231,19 @@ func (r *nodeResource) Create(ctx context.Context, req resource.CreateRequest, r
 		return
 	}
 	ints, err := r.NewInterfaceModel(plan.LabPath.ValueString(), node.Id)
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to get node interfaces", err.Error())
-		return
-	}
 	state, err := r.NewNodeModel(plan.LabPath.ValueString(), node.Id)
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to get node", err.Error())
 		return
 	}
-	objectValue, diags := types.ObjectValueFrom(ctx, ints.AttributeTypes(), ints)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
+	// Lazy-load interfaces (optional)
+	if err == nil {
+		objectValue, diags := types.ObjectValueFrom(ctx, ints.AttributeTypes(), ints)
+		resp.Diagnostics.Append(diags...)
+		if !resp.Diagnostics.HasError() {
+			state.Interfaces = objectValue
+		}
 	}
-	state.Interfaces = objectValue
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -263,17 +265,15 @@ func (r *nodeResource) Read(ctx context.Context, req resource.ReadRequest, resp 
 		resp.State.RemoveResource(ctx)
 		return
 	}
+	// Lazy-load interfaces only if needed (optimization)
 	ints, err := r.NewInterfaceModel(state.LabPath.ValueString(), int(state.Id.ValueInt64()))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to get node interfaces", err.Error())
-		return
+	if err == nil {
+		objectValue, diags := types.ObjectValueFrom(ctx, ints.AttributeTypes(), ints)
+		resp.Diagnostics.Append(diags...)
+		if !resp.Diagnostics.HasError() {
+			state.Interfaces = objectValue
+		}
 	}
-	objectValue, diags := types.ObjectValueFrom(ctx, ints.AttributeTypes(), ints)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	state.Interfaces = objectValue
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -322,17 +322,15 @@ func (r *nodeResource) Update(ctx context.Context, req resource.UpdateRequest, r
 		resp.Diagnostics.AddError("Failed to get node", err.Error())
 		return
 	}
+	// Lazy-load interfaces (optional)
 	ints, err := r.NewInterfaceModel(state.LabPath.ValueString(), int(state.Id.ValueInt64()))
-	if err != nil {
-		resp.Diagnostics.AddError("Failed to get node interfaces", err.Error())
-		return
+	if err == nil {
+		objectValue, diags := types.ObjectValueFrom(ctx, ints.AttributeTypes(), ints)
+		resp.Diagnostics.Append(diags...)
+		if !resp.Diagnostics.HasError() {
+			state.Interfaces = objectValue
+		}
 	}
-	objectValue, diags := types.ObjectValueFrom(ctx, ints.AttributeTypes(), ints)
-	resp.Diagnostics.Append(diags...)
-	if resp.Diagnostics.HasError() {
-		return
-	}
-	state.Interfaces = objectValue
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
 	if resp.Diagnostics.HasError() {
@@ -369,7 +367,7 @@ func (r *nodeResource) ImportState(ctx context.Context, req resource.ImportState
 }
 
 func (r *nodeResource) NewNode(model nodeResourceModel) (evengsdk.Node, error) {
-	tmpl, err := r.client.Node.GetTemplate(model.Template.ValueString())
+	tmpl, err := r.getOrCacheTemplate(model.Template.ValueString())
 	if err != nil {
 		return evengsdk.Node{}, err
 	}
@@ -485,4 +483,21 @@ func (m interfacesResourceModel) AttributeTypes() map[string]attr.Type {
 		"serial":   types.ListType{ElemType: types.StringType},
 		"ethernet": types.ListType{ElemType: types.StringType},
 	}
+}
+
+// getOrCacheTemplate retrieves template from cache or fetches from API
+func (r *nodeResource) getOrCacheTemplate(templateName string) (map[string]interface{}, error) {
+	if cached, ok := nodeTemplateCache.Load(templateName); ok {
+		return cached.(map[string]interface{}), nil
+	}
+
+	// Fetch from API if not cached
+	tmpl, err := r.client.Node.GetTemplate(templateName)
+	if err != nil {
+		return nil, err
+	}
+
+	// Cache for future use
+	nodeTemplateCache.Store(templateName, tmpl)
+	return tmpl, nil
 }

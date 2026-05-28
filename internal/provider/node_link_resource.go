@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"strconv"
 	"strings"
+	"sync"
 
 	"github.com/CorentinPtrl/evengsdk"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
@@ -30,6 +31,9 @@ var (
 	_ resource.Resource                = &nodeLinkResource{}
 	_ resource.ResourceWithConfigure   = &nodeLinkResource{}
 	_ resource.ResourceWithImportState = &nodeLinkResource{}
+
+	// nodeInterfaceCache caches GetNodeInterface results to avoid redundant API calls during refresh
+	nodeInterfaceCache = &sync.Map{} // key: "labPath|nodeId|port", value: evengsdk.Interface
 )
 
 // NewNodeLinkResource is a helper function to simplify the provider implementation.
@@ -511,7 +515,7 @@ func (r *nodeLinkResource) NewNodeLinkModelNet(state NodeLinkResourceModel) (Nod
 	if state.SourcePort.ValueString() == "" {
 		return model, nil, false
 	}
-	_, sourceInt, err := r.client.Node.GetNodeInterface(state.LabPath.ValueString(), int(state.SourceNodeId.ValueInt64()), state.SourcePort.ValueString())
+	_, sourceInt, err := r.getOrCacheNodeInterface(state.LabPath.ValueString(), int(state.SourceNodeId.ValueInt64()), state.SourcePort.ValueString())
 	if err != nil {
 		model.SourcePort = basetypes.NewStringValue("")
 		return model, err, false
@@ -536,11 +540,11 @@ func (r *nodeLinkResource) MakeNodeLinkNode(plan NodeLinkResourceModel, state No
 			return state.NetworkId.ValueInt64(), err
 		}
 	}
-	sourceIndex, _, err := r.client.Node.GetNodeInterface(plan.LabPath.ValueString(), int(plan.SourceNodeId.ValueInt64()), plan.SourcePort.ValueString())
+	sourceIndex, _, err := r.getOrCacheNodeInterface(plan.LabPath.ValueString(), int(plan.SourceNodeId.ValueInt64()), plan.SourcePort.ValueString())
 	if err != nil {
 		return state.NetworkId.ValueInt64(), err
 	}
-	targetIndex, _, err := r.client.Node.GetNodeInterface(plan.LabPath.ValueString(), int(plan.TargetNodeId.ValueInt64()), plan.TargetPort.ValueString())
+	targetIndex, _, err := r.getOrCacheNodeInterface(plan.LabPath.ValueString(), int(plan.TargetNodeId.ValueInt64()), plan.TargetPort.ValueString())
 	if err != nil {
 		return state.NetworkId.ValueInt64(), err
 	}
@@ -577,12 +581,12 @@ func (r *nodeLinkResource) NewNodeLinkModelNode(state NodeLinkResourceModel) (No
 		model.TargetPort = basetypes.NewStringValue("")
 		return model, err, false
 	}
-	_, sourceInt, err := r.client.Node.GetNodeInterface(state.LabPath.ValueString(), int(state.SourceNodeId.ValueInt64()), state.SourcePort.ValueString())
+	_, sourceInt, err := r.getOrCacheNodeInterface(state.LabPath.ValueString(), int(state.SourceNodeId.ValueInt64()), state.SourcePort.ValueString())
 	if err != nil {
 		model.SourcePort = basetypes.NewStringValue("")
 		return model, err, false
 	}
-	_, targetInt, err := r.client.Node.GetNodeInterface(state.LabPath.ValueString(), int(state.TargetNodeId.ValueInt64()), state.TargetPort.ValueString())
+	_, targetInt, err := r.getOrCacheNodeInterface(state.LabPath.ValueString(), int(state.TargetNodeId.ValueInt64()), state.TargetPort.ValueString())
 	if err != nil {
 		model.TargetPort = basetypes.NewStringValue("")
 		return model, err, false
@@ -613,8 +617,29 @@ func (r *nodeLinkResource) NewNodeLinkModelNode(state NodeLinkResourceModel) (No
 	return model, nil, false
 }
 
+// getOrCacheNodeInterface retrieves node interface from cache or fetches from API
+func (r *nodeLinkResource) getOrCacheNodeInterface(labPath string, nodeId int, port string) (int, evengsdk.Interface, error) {
+	cacheKey := fmt.Sprintf("%s|%d|%s", labPath, nodeId, port)
+	
+	// Check cache
+	if cached, ok := nodeInterfaceCache.Load(cacheKey); ok {
+		iface := cached.(evengsdk.Interface)
+		return nodeId, iface, nil
+	}
+	
+	// Fetch from API if not cached
+	idx, iface, err := r.client.Node.GetNodeInterface(labPath, nodeId, port)
+	if err != nil {
+		return idx, iface, err
+	}
+	
+	// Cache for future use
+	nodeInterfaceCache.Store(cacheKey, iface)
+	return idx, iface, nil
+}
+
 func (r *nodeLinkResource) ensureInterfaceDeleted(labPath string, nodeId int, port string, networkId int) error {
-	_, inter, err := r.client.Node.GetNodeInterface(labPath, nodeId, port)
+	_, inter, err := r.getOrCacheNodeInterface(labPath, nodeId, port)
 	if err != nil {
 		return err
 	}
