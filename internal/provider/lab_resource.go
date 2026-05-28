@@ -40,7 +40,7 @@ type labResourceModel struct {
 	Body        basetypes.StringValue `tfsdk:"body"`
 	Description basetypes.StringValue `tfsdk:"description"`
 	Filename    basetypes.StringValue `tfsdk:"filename"`
-	Name        string                `tfsdk:"name"`
+	Name        basetypes.StringValue `tfsdk:"name"`
 	Version     basetypes.StringValue `tfsdk:"version"`
 	Id          basetypes.StringValue `tfsdk:"id"`
 }
@@ -127,7 +127,7 @@ func (r *labResource) Create(ctx context.Context, req resource.CreateRequest, re
 	if !plan.FolderPath.IsNull() {
 		path = plan.FolderPath.ValueString()
 	}
-	path = path + "/" + plan.Name + ".unl"
+	path = path + "/" + plan.Name.ValueString() + ".unl"
 	err := r.client.Lab.CreateLab(path, evengsdk.Lab{
 		Author:      plan.Author.ValueString(),
 		Body:        plan.Body.ValueString(),
@@ -171,7 +171,9 @@ func (r *labResource) Read(ctx context.Context, req resource.ReadRequest, resp *
 	state.Body = stringToBasetype(lab.Body)
 	state.Description = stringToBasetype(lab.Description)
 	state.Filename = basetypes.NewStringValue(lab.Filename)
+	state.Name = basetypes.NewStringValue(lab.Name)
 	state.Version = basetypes.NewStringValue(lab.Version.String())
+	state.Id = basetypes.NewStringValue(lab.Id)
 
 	diags = resp.State.Set(ctx, state)
 	resp.Diagnostics.Append(diags...)
@@ -201,7 +203,7 @@ func (r *labResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		return
 	}
 	err = r.client.Lab.UpdateLab(state.Path.ValueString(), evengsdk.Lab{
-		Name:        plan.Name,
+		Name:        plan.Name.ValueString(),
 		Author:      plan.Author.ValueString(),
 		Body:        plan.Body.ValueString(),
 		Description: plan.Description.ValueString(),
@@ -210,7 +212,7 @@ func (r *labResource) Update(ctx context.Context, req resource.UpdateRequest, re
 		resp.Diagnostics.AddError("Failed to update lab", err.Error())
 		return
 	}
-	state.Path = basetypes.NewStringValue(plan.FolderPath.ValueString() + "/" + plan.Name + ".unl")
+	state.Path = basetypes.NewStringValue(plan.FolderPath.ValueString() + "/" + plan.Name.ValueString() + ".unl")
 	lab, err := r.client.Lab.GetLab(state.Path.ValueString())
 	if err != nil {
 		resp.Diagnostics.AddError("Failed to read lab", err.Error())
@@ -221,7 +223,7 @@ func (r *labResource) Update(ctx context.Context, req resource.UpdateRequest, re
 	state.Description = stringToBasetype(lab.Description)
 	state.Filename = basetypes.NewStringValue(lab.Filename)
 	state.Version = basetypes.NewStringValue(lab.Version.String())
-	state.Name = lab.Name
+	state.Name = basetypes.NewStringValue(lab.Name)
 	state.FolderPath = plan.FolderPath
 
 	diags = resp.State.Set(ctx, state)
@@ -253,8 +255,8 @@ func (r *labResource) ImportState(ctx context.Context, req resource.ImportStateR
 
 func (r *labResource) MoveLab(plan *labResourceModel, state *labResourceModel) error {
 	if plan.FolderPath.ValueString() != state.FolderPath.ValueString() {
-		path := plan.FolderPath.ValueString() + "/" + state.Name + ".unl"
-		otherLab, err := r.client.Lab.GetLab(plan.FolderPath.ValueString() + "/" + state.Name + ".unl")
+		path := plan.FolderPath.ValueString() + "/" + state.Name.ValueString() + ".unl"
+		otherLab, err := r.client.Lab.GetLab(plan.FolderPath.ValueString() + "/" + state.Name.ValueString() + ".unl")
 		if err == nil && otherLab.Id != state.Id.ValueString() {
 			return fmt.Errorf("Lab already exists in the new folder")
 		} else if err == nil && otherLab.Id == state.Id.ValueString() {

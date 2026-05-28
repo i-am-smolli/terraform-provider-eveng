@@ -440,10 +440,7 @@ func (r *nodeResource) NewNodeModel(labPath string, nodeId int) (nodeResourceMod
 	model.Uuid = types.StringValue(node.Uuid)
 	model.Id = types.Int64Value(int64(node.Id))
 	config, err := r.client.Node.GetNodeConfig(labPath, nodeId)
-	if err != nil {
-		return nodeResourceModel{}, err
-	}
-	if config != "" {
+	if err == nil && config != "" {
 		model.Config = types.StringValue(config)
 	}
 	model.LabPath = types.StringValue(labPath)
