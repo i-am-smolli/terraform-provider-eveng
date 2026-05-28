@@ -394,14 +394,47 @@ func (r *nodeLinkResource) Delete(ctx context.Context, req resource.DeleteReques
 }
 
 // ImportState imports existing links using one of these formats:
-// - "<lab_path>|<network_id>|<source_node_id>|<source_port>"
-// - "<lab_path>|<network_id>|<source_node_id>|<source_port>|<target_node_id>|<target_port>"
+// - "<lab_path>|<network_id>|<source_node_id>|<source_port>" (node-to-network link)
+// - "<lab_path>|<network_id>|<source_node_id>|<source_port>|<target_node_id>|<target_port>" (node-to-node link with known network_id)
+// - "<lab_path>|<source_node_id>|<source_port>|<target_node_id>|<target_port>" (node-to-node link without network_id, auto-discovered)
 func (r *nodeLinkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
 	parts := strings.Split(req.ID, "|")
+
+	// Support three formats by length
+	if len(parts) == 5 {
+		// Alternative format: <lab_path>|<source_node_id>|<source_port>|<target_node_id>|<target_port> (no network_id)
+		labPath := strings.TrimSpace(parts[0])
+		sourceNodeID, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+		if err != nil {
+			resp.Diagnostics.AddError("Invalid import identifier", fmt.Sprintf("source_node_id must be an integer: %s", parts[1]))
+			return
+		}
+		sourcePort := strings.TrimSpace(parts[2])
+		targetNodeID, err := strconv.ParseInt(strings.TrimSpace(parts[3]), 10, 64)
+		if err != nil {
+			resp.Diagnostics.AddError("Invalid import identifier", fmt.Sprintf("target_node_id must be an integer: %s", parts[3]))
+			return
+		}
+		targetPort := strings.TrimSpace(parts[4])
+		if labPath == "" || sourcePort == "" || targetPort == "" {
+			resp.Diagnostics.AddError("Invalid import identifier", "lab_path, source_port and target_port must not be empty")
+			return
+		}
+
+		// For P2P links without network_id, we set network_id to 0 and let Read() discover it from the nodes
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("lab_path"), labPath)...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("network_id"), int64(0))...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("source_node_id"), sourceNodeID)...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("source_port"), sourcePort)...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_node_id"), targetNodeID)...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_port"), targetPort)...)
+		return
+	}
+
 	if len(parts) != 4 && len(parts) != 6 {
 		resp.Diagnostics.AddError(
 			"Invalid import identifier",
-			fmt.Sprintf("Invalid import ID for eveng_node_link: expected \"<lab_path>|<network_id>|<source_node_id>|<source_port>\" or \"<lab_path>|<network_id>|<source_node_id>|<source_port>|<target_node_id>|<target_port>\", got %q", req.ID),
+			fmt.Sprintf("Invalid import ID for eveng_node_link: expected \"<lab_path>|<network_id>|<source_node_id>|<source_port>\", \"<lab_path>|<network_id>|<source_node_id>|<source_port>|<target_node_id>|<target_port>\" or \"<lab_path>|<source_node_id>|<source_port>|<target_node_id>|<target_port>\", got %q", req.ID),
 		)
 		return
 	}
@@ -530,11 +563,9 @@ func (r *nodeLinkResource) MakeNodeLinkNode(plan NodeLinkResourceModel, state No
 
 func (r *nodeLinkResource) NewNodeLinkModelNode(state NodeLinkResourceModel) (NodeLinkResourceModel, error, bool) {
 	model := state
-	_, err := r.client.Network.GetNetwork(state.LabPath.ValueString(), int(state.NetworkId.ValueInt64()))
-	if err != nil {
-		return model, err, true
-	}
-	_, err = r.client.Node.GetNode(state.LabPath.ValueString(), int(state.SourceNodeId.ValueInt64()))
+
+	// Check if both nodes and their interfaces exist
+	_, err := r.client.Node.GetNode(state.LabPath.ValueString(), int(state.SourceNodeId.ValueInt64()))
 	if err != nil {
 		model.SourceNodeId = basetypes.NewInt64Value(0)
 		model.SourcePort = basetypes.NewStringValue("")
@@ -551,19 +582,34 @@ func (r *nodeLinkResource) NewNodeLinkModelNode(state NodeLinkResourceModel) (No
 		model.SourcePort = basetypes.NewStringValue("")
 		return model, err, false
 	}
-	if sourceInt.NetworkId != int(state.NetworkId.ValueInt64()) {
-		model.SourcePort = basetypes.NewStringValue("")
-		return model, fmt.Errorf("source port %s is not connected to network %d", state.SourcePort.ValueString(), state.NetworkId.ValueInt64()), false
-	}
 	_, targetInt, err := r.client.Node.GetNodeInterface(state.LabPath.ValueString(), int(state.TargetNodeId.ValueInt64()), state.TargetPort.ValueString())
 	if err != nil {
-		model.SourcePort = basetypes.NewStringValue("")
+		model.TargetPort = basetypes.NewStringValue("")
 		return model, err, false
 	}
-	if targetInt.NetworkId != int(state.NetworkId.ValueInt64()) {
-		model.TargetPort = basetypes.NewStringValue("")
-		return model, fmt.Errorf("target port %s is not connected to network %d", state.TargetPort.ValueString(), state.NetworkId.ValueInt64()), false
+
+	// If network_id is 0 (from P2P import without explicit network_id), discover it from interfaces
+	if state.NetworkId.ValueInt64() == 0 {
+		if sourceInt.NetworkId == targetInt.NetworkId && sourceInt.NetworkId != 0 {
+			model.NetworkId = basetypes.NewInt64Value(int64(sourceInt.NetworkId))
+		} else {
+			return model, fmt.Errorf("source and target ports are not connected to the same network"), false
+		}
+	} else {
+		// Verify both ports are connected to the expected network
+		if sourceInt.NetworkId != int(state.NetworkId.ValueInt64()) {
+			model.SourcePort = basetypes.NewStringValue("")
+			return model, fmt.Errorf("source port %s is not connected to network %d", state.SourcePort.ValueString(), state.NetworkId.ValueInt64()), false
+		}
+		if targetInt.NetworkId != int(state.NetworkId.ValueInt64()) {
+			model.TargetPort = basetypes.NewStringValue("")
+			return model, fmt.Errorf("target port %s is not connected to network %d", state.TargetPort.ValueString(), state.NetworkId.ValueInt64()), false
+		}
 	}
+
+	// Optional: verify network exists (but don't fail if it doesn't, in case of internal P2P networks)
+	_, _ = r.client.Network.GetNetwork(state.LabPath.ValueString(), int(model.NetworkId.ValueInt64()))
+
 	return model, nil, false
 }
 
