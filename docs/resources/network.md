@@ -57,3 +57,11 @@ resource "eveng_network" "bridged" {
 ### Read-Only
 
 - `id` (Number) Unique identifier of the network.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import eveng_network.bridged '/NetworkExample.unl|1'
+```

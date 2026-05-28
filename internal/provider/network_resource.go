@@ -6,7 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	"github.com/CorentinPtrl/evengsdk"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -14,8 +16,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &networkResource{}
-	_ resource.ResourceWithConfigure = &networkResource{}
+	_ resource.Resource                = &networkResource{}
+	_ resource.ResourceWithConfigure   = &networkResource{}
+	_ resource.ResourceWithImportState = &networkResource{}
 )
 
 // NewNetworkResource is a helper function to simplify the provider implementation.
@@ -203,6 +206,18 @@ func (r *networkResource) Delete(ctx context.Context, req resource.DeleteRequest
 		resp.Diagnostics.AddError("Failed to delete network", err.Error())
 		return
 	}
+}
+
+// ImportState imports an existing network using "<lab_path>|<id>".
+func (r *networkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	labPath, id, err := parseLabPathAndID(req.ID, "eveng_network")
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid import identifier", err.Error())
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("lab_path"), labPath)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
 func (r *networkResource) NewNode(model NetworkResourceModel) evengsdk.Network {

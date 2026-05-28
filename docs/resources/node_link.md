@@ -99,3 +99,11 @@ Optional:
 - `stub` (Number) Stub of the link.
 - `style` (String) Style of the link.
 - `width` (Number) Width of the link.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import eveng_node_link.node '/NodeLink.unl|1|1|Gi0/1|2|Gi0/1'
+```

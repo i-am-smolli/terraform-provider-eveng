@@ -7,6 +7,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strconv"
+	"strings"
+
 	"github.com/CorentinPtrl/evengsdk"
 	"github.com/hashicorp/terraform-plugin-framework-validators/int64validator"
 	"github.com/hashicorp/terraform-plugin-framework-validators/stringvalidator"
@@ -20,13 +23,13 @@ import (
 	"github.com/hashicorp/terraform-plugin-framework/types"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 	"github.com/hashicorp/terraform-plugin-log/tflog"
-	"strconv"
 )
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &nodeLinkResource{}
-	_ resource.ResourceWithConfigure = &nodeLinkResource{}
+	_ resource.Resource                = &nodeLinkResource{}
+	_ resource.ResourceWithConfigure   = &nodeLinkResource{}
+	_ resource.ResourceWithImportState = &nodeLinkResource{}
 )
 
 // NewNodeLinkResource is a helper function to simplify the provider implementation.
@@ -388,6 +391,62 @@ func (r *nodeLinkResource) Delete(ctx context.Context, req resource.DeleteReques
 			return
 		}
 	}
+}
+
+// ImportState imports existing links using one of these formats:
+// - "<lab_path>|<network_id>|<source_node_id>|<source_port>"
+// - "<lab_path>|<network_id>|<source_node_id>|<source_port>|<target_node_id>|<target_port>"
+func (r *nodeLinkResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	parts := strings.Split(req.ID, "|")
+	if len(parts) != 4 && len(parts) != 6 {
+		resp.Diagnostics.AddError(
+			"Invalid import identifier",
+			fmt.Sprintf("Invalid import ID for eveng_node_link: expected \"<lab_path>|<network_id>|<source_node_id>|<source_port>\" or \"<lab_path>|<network_id>|<source_node_id>|<source_port>|<target_node_id>|<target_port>\", got %q", req.ID),
+		)
+		return
+	}
+
+	labPath := strings.TrimSpace(parts[0])
+	networkID, err := strconv.ParseInt(strings.TrimSpace(parts[1]), 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid import identifier", fmt.Sprintf("network_id must be an integer: %s", parts[1]))
+		return
+	}
+	sourceNodeID, err := strconv.ParseInt(strings.TrimSpace(parts[2]), 10, 64)
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid import identifier", fmt.Sprintf("source_node_id must be an integer: %s", parts[2]))
+		return
+	}
+	sourcePort := strings.TrimSpace(parts[3])
+	if labPath == "" || sourcePort == "" {
+		resp.Diagnostics.AddError("Invalid import identifier", "lab_path and source_port must not be empty")
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("lab_path"), labPath)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("network_id"), networkID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("source_node_id"), sourceNodeID)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("source_port"), sourcePort)...)
+
+	if len(parts) == 6 {
+		targetNodeID, convErr := strconv.ParseInt(strings.TrimSpace(parts[4]), 10, 64)
+		if convErr != nil {
+			resp.Diagnostics.AddError("Invalid import identifier", fmt.Sprintf("target_node_id must be an integer: %s", parts[4]))
+			return
+		}
+		targetPort := strings.TrimSpace(parts[5])
+		if targetPort == "" {
+			resp.Diagnostics.AddError("Invalid import identifier", "target_port must not be empty when target_node_id is provided")
+			return
+		}
+
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_node_id"), targetNodeID)...)
+		resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_port"), targetPort)...)
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_node_id"), types.Int64Null())...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("target_port"), types.StringNull())...)
 }
 
 func (r *nodeLinkResource) MakeNodeLinkNet(plan NodeLinkResourceModel, state NodeLinkResourceModel) (int64, error) {

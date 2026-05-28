@@ -48,3 +48,11 @@ resource "eveng_lab" "example" {
 - `id` (String) Id of the lab.
 - `path` (String) Path of the lab.
 - `version` (String) Version of the lab in string format.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import eveng_lab.example /LabExample.unl
+```

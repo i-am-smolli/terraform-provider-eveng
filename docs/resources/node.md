@@ -74,3 +74,11 @@ Read-Only:
 
 - `ethernet` (List of String) Ethernet interfaces.
 - `serial` (List of String) Serial interfaces.
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import eveng_node.node '/NodeTest.unl|1'
+```

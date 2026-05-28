@@ -6,7 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	"github.com/CorentinPtrl/evengsdk"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
@@ -14,8 +16,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &folderResource{}
-	_ resource.ResourceWithConfigure = &folderResource{}
+	_ resource.Resource                = &folderResource{}
+	_ resource.ResourceWithConfigure   = &folderResource{}
+	_ resource.ResourceWithImportState = &folderResource{}
 )
 
 // NewFolderResource is a helper function to simplify the provider implementation.
@@ -159,4 +162,9 @@ func (r *folderResource) Delete(ctx context.Context, req resource.DeleteRequest,
 		resp.Diagnostics.AddError("Failed to delete folder", err.Error())
 		return
 	}
+}
+
+// ImportState imports the resource state from an existing folder path.
+func (r *folderResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("path"), req, resp)
 }

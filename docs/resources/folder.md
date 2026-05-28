@@ -34,3 +34,11 @@ resource "eveng_folder" "example" {
 ### Required
 
 - `path` (String)
+
+## Import
+
+Import is supported using the following syntax:
+
+```shell
+terraform import eveng_folder.example /example
+```

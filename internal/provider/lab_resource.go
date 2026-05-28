@@ -6,7 +6,9 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	"github.com/CorentinPtrl/evengsdk"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
@@ -15,8 +17,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &labResource{}
-	_ resource.ResourceWithConfigure = &labResource{}
+	_ resource.Resource                = &labResource{}
+	_ resource.ResourceWithConfigure   = &labResource{}
+	_ resource.ResourceWithImportState = &labResource{}
 )
 
 // NewLabResource is a helper function to simplify the provider implementation.
@@ -241,6 +244,11 @@ func (r *labResource) Delete(ctx context.Context, req resource.DeleteRequest, re
 		resp.Diagnostics.AddError("Failed to delete lab", err.Error())
 		return
 	}
+}
+
+// ImportState imports the resource state from an existing lab path.
+func (r *labResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	resource.ImportStatePassthroughID(ctx, path.Root("path"), req, resp)
 }
 
 func (r *labResource) MoveLab(plan *labResourceModel, state *labResourceModel) error {

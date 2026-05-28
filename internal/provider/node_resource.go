@@ -7,8 +7,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
 	"github.com/CorentinPtrl/evengsdk"
 	"github.com/hashicorp/terraform-plugin-framework/attr"
+	"github.com/hashicorp/terraform-plugin-framework/path"
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
 	"github.com/hashicorp/terraform-plugin-framework/types"
@@ -17,8 +19,9 @@ import (
 
 // Ensure the implementation satisfies the expected interfaces.
 var (
-	_ resource.Resource              = &nodeResource{}
-	_ resource.ResourceWithConfigure = &nodeResource{}
+	_ resource.Resource                = &nodeResource{}
+	_ resource.ResourceWithConfigure   = &nodeResource{}
+	_ resource.ResourceWithImportState = &nodeResource{}
 )
 
 // NewNodeResource is a helper function to simplify the provider implementation.
@@ -345,6 +348,18 @@ func (r *nodeResource) Delete(ctx context.Context, req resource.DeleteRequest, r
 		resp.Diagnostics.AddError("Failed to delete node", err.Error())
 		return
 	}
+}
+
+// ImportState imports an existing node using "<lab_path>|<id>".
+func (r *nodeResource) ImportState(ctx context.Context, req resource.ImportStateRequest, resp *resource.ImportStateResponse) {
+	labPath, id, err := parseLabPathAndID(req.ID, "eveng_node")
+	if err != nil {
+		resp.Diagnostics.AddError("Invalid import identifier", err.Error())
+		return
+	}
+
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("lab_path"), labPath)...)
+	resp.Diagnostics.Append(resp.State.SetAttribute(ctx, path.Root("id"), id)...)
 }
 
 func (r *nodeResource) NewNode(model nodeResourceModel) (evengsdk.Node, error) {
