@@ -620,19 +620,19 @@ func (r *nodeLinkResource) NewNodeLinkModelNode(state NodeLinkResourceModel) (No
 // getOrCacheNodeInterface retrieves node interface from cache or fetches from API
 func (r *nodeLinkResource) getOrCacheNodeInterface(labPath string, nodeId int, port string) (int, evengsdk.Interface, error) {
 	cacheKey := fmt.Sprintf("%s|%d|%s", labPath, nodeId, port)
-	
+
 	// Check cache
 	if cached, ok := nodeInterfaceCache.Load(cacheKey); ok {
 		iface := cached.(evengsdk.Interface)
 		return nodeId, iface, nil
 	}
-	
+
 	// Fetch from API if not cached
 	idx, iface, err := r.client.Node.GetNodeInterface(labPath, nodeId, port)
 	if err != nil {
 		return idx, iface, err
 	}
-	
+
 	// Cache for future use
 	nodeInterfaceCache.Store(cacheKey, iface)
 	return idx, iface, nil
