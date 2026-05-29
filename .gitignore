@@ -35,4 +35,4 @@ website/vendor
 *.winfile eol=crlf
 
 terraform-provider-eveng
-test/
+localtest/
