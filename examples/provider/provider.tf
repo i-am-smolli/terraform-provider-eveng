@@ -11,4 +11,5 @@ provider "eveng" {
   host     = "http://localhost"
   username = "admin"
   password = "eve"
+  # insecure = true  # Disable TLS certificate verification (default: false)
 }

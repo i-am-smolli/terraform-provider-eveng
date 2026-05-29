@@ -25,7 +25,7 @@ import (
 )
 
 func main() {
-    client, err := evengsdk.NewBasicAuthClient("username", "password", "0", "http://your-eve-ng-host")
+    client, err := evengsdk.NewBasicAuthClient("username", "password", "0", "http://your-eve-ng-host", false)
     if err != nil {
         log.Fatal(err)
     }

@@ -1,3 +1,11 @@
+## 0.1.9 (UNRELEASED)
+
+BUGFIX
+* Fixed an issue where node links could not be created due to missing type conversion.
+
+IMPROVEMENTS:
+* Add support for the optional 'insecure' provider parameter, for proper TLS support (https).
+
 ## 0.1.8 (29.05.2026)
 
 NOTES:
