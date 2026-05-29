@@ -706,16 +706,16 @@ func (r *nodeLinkResource) GetTopologyForTargetNode(ctx context.Context, plan No
 			if linkstyle == "" || !ok {
 				linkstyle = "Straight"
 			}
-			width, _ := strconv.Atoi(node["width"].(string))
+			width, _ := strconv.ParseInt(node["width"].(string), 10, 32)
 			label, ok := node["label"].(string)
 			if !ok {
 				label = ""
 			}
 			labelpos, _ := strconv.ParseFloat(node["labelpos"].(string), 32)
-			stub, _ := strconv.Atoi(node["stub"].(string))
-			curviness, _ := strconv.Atoi(node["curviness"].(string))
-			beziercurviness, _ := strconv.Atoi(node["beziercurviness"].(string))
-			round, _ := strconv.Atoi(node["round"].(string))
+			stub, _ := strconv.ParseInt(node["stub"].(string), 10, 32)
+			curviness, _ := strconv.ParseInt(node["curviness"].(string), 10, 32)
+			beziercurviness, _ := strconv.ParseInt(node["beziercurviness"].(string), 10, 32)
+			round, _ := strconv.ParseInt(node["round"].(string), 10, 32)
 			midpoint, _ := strconv.ParseFloat(node["midpoint"].(string), 32)
 			return StyleResourceModel{
 				Style:           basetypes.NewStringValue(style),
