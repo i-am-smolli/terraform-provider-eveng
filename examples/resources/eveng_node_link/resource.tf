@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     eveng = {
-      source = "CorentinPtrl/eveng"
+      source = "i-am-smolli/eveng"
     }
   }
 }
@@ -41,10 +41,9 @@ resource "eveng_network" "bridged" {
   type     = "bridge"
 }
 
-resource "eveng_node_link" "node" {
+resource "eveng_node_link" "cable1" {
   lab_path       = eveng_lab.example.path
   source_node_id = eveng_node.node.id
   source_port    = "Gi0/1"
-  target_node_id = eveng_node.test.id
-  target_port    = "Gi0/1"
+  network_id     = eveng_network.bridged.id
 }

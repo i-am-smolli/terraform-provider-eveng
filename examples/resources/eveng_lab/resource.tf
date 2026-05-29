@@ -1,7 +1,7 @@
 terraform {
   required_providers {
     eveng = {
-      source = "CorentinPtrl/eveng"
+      source = "i-am-smolli/eveng"
     }
   }
 }
