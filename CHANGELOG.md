@@ -2,7 +2,8 @@
 
 NOTES:
 * Migrated provider source namespace to `i-am-smolli/eveng`.
-* Imported evengsdk into repository for more convenience.
+* Drop-in replacement for `CorentinPtrl/eveng`.
+* Imported `evengsdk` into repository for more convenience.
 
 IMPROVEMENTS:
 * Provider speed optimization, up to 90% faster.
