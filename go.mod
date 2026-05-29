@@ -2,6 +2,8 @@ module terraform-provider-eveng
 
 go 1.23.1
 
+replace github.com/CorentinPtrl/evengsdk => ./evengsdk
+
 require (
 	github.com/CorentinPtrl/evengsdk v0.1.1
 	github.com/hashicorp/terraform-plugin-framework v1.13.0

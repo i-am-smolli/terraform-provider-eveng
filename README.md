@@ -89,6 +89,31 @@ resource "eveng_start_nodes" "start" {
 
 If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (see [Requirements](#requirements) above).
 
+### Local development with evengsdk
+
+If you also want to modify `evengsdk` while developing this provider, keep it directly inside this repository.
+
+Expected layout:
+
+```text
+terraform-provider-eveng/
+  evengsdk/
+```
+
+This repository is configured to always use the local SDK folder:
+
+```shell
+replace github.com/CorentinPtrl/evengsdk => ./evengsdk
+```
+
+To switch back to the remote SDK release, remove the `replace` line in `go.mod`.
+
+To initialize the local SDK folder, you can clone it into this repository root:
+
+```shell
+git clone https://github.com/CorentinPtrl/evengsdk.git evengsdk
+```
+
 To compile the provider, run `go install`. This will build the provider and put the provider binary in the `$GOPATH/bin` directory.
 
 To generate or update documentation, run `make generate`.
