@@ -1,3 +1,6 @@
+// Copyright (c) HashiCorp, Inc.
+// SPDX-License-Identifier: MPL-2.0
+
 package evengsdk
 
 import (
@@ -6,15 +9,15 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"errors"
-	"github.com/hashicorp/go-cleanhttp"
-	"github.com/hashicorp/go-retryablehttp"
 	"io"
 	"net/http"
 	"net/url"
 	"strconv"
 	"strings"
-	"sync"
 	"time"
+
+	"github.com/hashicorp/go-cleanhttp"
+	"github.com/hashicorp/go-retryablehttp"
 )
 
 const (
@@ -57,7 +60,6 @@ type Client struct {
 	Node                      *NodeService
 	Folder                    *FolderService
 	Network                   *NetworkService
-	lock                      *sync.Mutex
 }
 
 func newClient() (*Client, error) {
@@ -72,23 +74,16 @@ func newClient() (*Client, error) {
 		Backoff:      retryablehttp.DefaultBackoff,
 		CheckRetry: func(ctx context.Context, resp *http.Response, err error) (bool, error) {
 			if err != nil {
-				return false, err
-			}
-			if 400 <= resp.StatusCode && resp.StatusCode < 500 {
 				return true, nil
 			}
-			body, err := io.ReadAll(resp.Body)
-			if err != nil {
-				return true, err
+			if resp == nil {
+				return true, nil
 			}
-			resp.Body = io.NopCloser(bytes.NewBuffer(body))
-			var response Response
-			err = json.Unmarshal(body, &response)
-			if err != nil {
-				return true, err
+			if resp.StatusCode == http.StatusRequestTimeout || resp.StatusCode == http.StatusTooManyRequests {
+				return true, nil
 			}
-			if response.Status != "success" {
-				return true, errors.New(response.Message)
+			if resp.StatusCode >= http.StatusInternalServerError {
+				return true, nil
 			}
 			return false, nil
 		},
@@ -99,7 +94,6 @@ func newClient() (*Client, error) {
 	c.Node = &NodeService{client: c}
 	c.Folder = &FolderService{client: c}
 	c.Network = &NetworkService{client: c}
-	c.lock = &sync.Mutex{}
 	return c, nil
 }
 
@@ -127,8 +121,17 @@ func (c *Client) login() error {
 		Password: c.password,
 		Html5:    c.Html5,
 	}
-	body, _ := json.Marshal(login)
-	everesp, resp, _ := c.Do(context.Background(), "POST", "api/auth/login", body)
+	body, err := json.Marshal(login)
+	if err != nil {
+		return err
+	}
+	everesp, resp, err := c.Do(context.Background(), "POST", "api/auth/login", body)
+	if err != nil {
+		return err
+	}
+	if everesp == nil || resp == nil {
+		return errors.New("login failed: empty response")
+	}
 	if everesp.Status != "success" {
 		return errors.New("Login Failed")
 	}
@@ -180,10 +183,7 @@ func (c *Client) GetStatus() (map[string]any, error) {
 }
 
 func (c *Client) Do(ctx context.Context, method, url string, body []byte) (*Response, *http.Response, error) {
-	c.lock.Lock()
-	defer c.lock.Unlock()
 	req, err := retryablehttp.NewRequest(method, c.baseURL.String()+url, bytes.NewBuffer(body))
-	req.Close = true
 	if err != nil {
 		return &Response{Code: "0", Message: "Failed to create request"}, nil, err
 	}
@@ -191,6 +191,7 @@ func (c *Client) Do(ctx context.Context, method, url string, body []byte) (*Resp
 		req.AddCookie(c.cookie)
 	}
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("User-Agent", c.UserAgent)
 	if ctx != nil {
 		req = req.WithContext(ctx)
 	}
