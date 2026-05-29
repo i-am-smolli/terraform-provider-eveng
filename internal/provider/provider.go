@@ -35,6 +35,7 @@ type EvengProviderModel struct {
 	Host     types.String `tfsdk:"host"`
 	Username types.String `tfsdk:"username"`
 	Password types.String `tfsdk:"password"`
+	Insecure types.Bool   `tfsdk:"insecure"`
 }
 
 func (p *EvengProvider) Metadata(ctx context.Context, req provider.MetadataRequest, resp *provider.MetadataResponse) {
@@ -58,6 +59,10 @@ func (p *EvengProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp
 				Optional:    true,
 				Sensitive:   true,
 				Description: "The password for the Eveng API. (Can also be set with the EVE_PASSWORD environment variable)",
+			},
+			"insecure": schema.BoolAttribute{
+				Optional:    true,
+				Description: "Disable TLS certificate verification when connecting to the Eveng API. Use with caution. (Can also be set with the EVE_INSECURE environment variable)",
 			},
 		},
 	}
@@ -125,6 +130,11 @@ func (p *EvengProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		password = config.Password.ValueString()
 	}
 
+	insecure := os.Getenv("EVE_INSECURE") == "true" || os.Getenv("EVE_INSECURE") == "1"
+	if !config.Insecure.IsNull() {
+		insecure = config.Insecure.ValueBool()
+	}
+
 	// If any of the expected configurations are missing, return
 	// errors with provider-specific guidance.
 
@@ -162,7 +172,7 @@ func (p *EvengProvider) Configure(ctx context.Context, req provider.ConfigureReq
 		return
 	}
 
-	client, err := evengsdk.NewBasicAuthClient(username, password, "0", host)
+	client, err := evengsdk.NewBasicAuthClient(username, password, "0", host, insecure)
 	if err != nil {
 		resp.Diagnostics.AddError(
 			"Unable to create Eveng API client",

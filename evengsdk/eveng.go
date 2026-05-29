@@ -56,14 +56,15 @@ type Client struct {
 	cookie                    *http.Cookie
 	UserAgent                 string
 	isPro                     bool
+	insecure                  bool
 	Lab                       *LabService
 	Node                      *NodeService
 	Folder                    *FolderService
 	Network                   *NetworkService
 }
 
-func newClient() (*Client, error) {
-	c := &Client{UserAgent: userAgent}
+func newClient(insecure bool) (*Client, error) {
+	c := &Client{UserAgent: userAgent, insecure: insecure}
 
 	c.client = &retryablehttp.Client{
 		ErrorHandler: retryablehttp.PassthroughErrorHandler,
@@ -88,7 +89,9 @@ func newClient() (*Client, error) {
 			return false, nil
 		},
 	}
-	(c.client.HTTPClient.Transport).(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true}
+	if insecure {
+		(c.client.HTTPClient.Transport).(*http.Transport).TLSClientConfig = &tls.Config{InsecureSkipVerify: true} //#nosec G402 -- User explicitly opted in via provider configuration
+	}
 
 	c.Lab = &LabService{client: c}
 	c.Node = &NodeService{client: c}
@@ -99,8 +102,9 @@ func newClient() (*Client, error) {
 
 // NewBasicAuthClient returns a new Client with basic auth
 // Html5 is optional and can be set to "1" to enable Apache Guacamole
-func NewBasicAuthClient(username, password, Html5, baseURL string) (*Client, error) {
-	client, err := newClient()
+// insecure disables TLS certificate verification when set to true
+func NewBasicAuthClient(username, password, Html5, baseURL string, insecure bool) (*Client, error) {
+	client, err := newClient(insecure)
 	if err != nil {
 		return nil, err
 	}

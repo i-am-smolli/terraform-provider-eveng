@@ -26,6 +26,7 @@ provider "eveng" {
   host     = "http://localhost"
   username = "admin"
   password = "eve"
+  # insecure = true  # Disable TLS certificate verification (default: false)
 }
 ```
 
@@ -35,5 +36,6 @@ provider "eveng" {
 ### Optional
 
 - `host` (String) The host of the Eveng API. (Can also be set with the EVE_HOST environment variable)
+- `insecure` (Boolean) Disable TLS certificate verification when connecting to the Eveng API. Use with caution. (Can also be set with the EVE_INSECURE environment variable)
 - `password` (String, Sensitive) The password for the Eveng API. (Can also be set with the EVE_PASSWORD environment variable)
 - `username` (String) The username for the Eveng API. (Can also be set with the EVE_USER environment variable)
