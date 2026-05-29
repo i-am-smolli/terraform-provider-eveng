@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright (c) i-am-smolli, CorentinPtrl.
 // SPDX-License-Identifier: MPL-2.0
 
 package evengsdk

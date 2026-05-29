@@ -1,4 +1,4 @@
-// Copyright (c) HashiCorp, Inc.
+// Copyright (c) i-am-smolli 2026 and onwards, CorentinPtrl until 2025.
 // SPDX-License-Identifier: MPL-2.0
 
 //go:build generate
