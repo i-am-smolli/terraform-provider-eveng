@@ -5,9 +5,10 @@ package provider
 
 import (
 	"context"
+	"os"
+
 	"github.com/CorentinPtrl/evengsdk"
 	"github.com/hashicorp/terraform-plugin-framework/path"
-	"os"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"
 	"github.com/hashicorp/terraform-plugin-framework/function"

@@ -6,6 +6,7 @@ package provider
 import (
 	"context"
 	"fmt"
+
 	"github.com/CorentinPtrl/evengsdk"
 
 	"github.com/hashicorp/terraform-plugin-framework/datasource"

@@ -6,9 +6,10 @@ package provider
 import (
 	"context"
 	"fmt"
+	"time"
+
 	"github.com/CorentinPtrl/evengsdk"
 	"github.com/hashicorp/terraform-plugin-framework/types/basetypes"
-	"time"
 
 	"github.com/hashicorp/terraform-plugin-framework/resource"
 	"github.com/hashicorp/terraform-plugin-framework/resource/schema"
