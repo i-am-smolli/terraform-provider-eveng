@@ -1,4 +1,4 @@
-## 0.1.8 (UNRELEASED)
+## 0.1.8 (29.05.2026)
 
 NOTES:
 * Migrated provider source namespace to `i-am-smolli/eveng`.
