@@ -3,12 +3,12 @@
 page_title: "eveng_network Resource - eveng"
 subcategory: ""
 description: |-
-  
+  Manages a network (bridge, cloud, etc.) inside an EVE-NG lab.
 ---
 
 # eveng_network (Resource)
 
-
+Manages a network (bridge, cloud, etc.) inside an EVE-NG lab.
 
 ## Example Usage
 

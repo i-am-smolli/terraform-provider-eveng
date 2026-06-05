@@ -66,6 +66,7 @@ func (r *startNodesResource) Configure(_ context.Context, req resource.Configure
 // Schema defines the schema for the resource.
 func (r *startNodesResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Starts all nodes in a specified EVE-NG lab. This helper resource can be used to make sure all nodes are running after provisioning.",
 		Attributes: map[string]schema.Attribute{
 			"lab_path": schema.StringAttribute{
 				Required:    true,

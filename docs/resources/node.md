@@ -3,12 +3,12 @@
 page_title: "eveng_node Resource - eveng"
 subcategory: ""
 description: |-
-  
+  Manages a node (virtual machine / device) inside an EVE-NG lab. This allows running network nodes using template-defined options.
 ---
 
 # eveng_node (Resource)
 
-
+Manages a node (virtual machine / device) inside an EVE-NG lab. This allows running network nodes using template-defined options.
 
 ## Example Usage
 

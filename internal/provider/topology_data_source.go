@@ -57,6 +57,7 @@ func (d *topologyDataSource) Configure(_ context.Context, req datasource.Configu
 
 func (d *topologyDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Retrieve the network topology of a specified lab in EVE-NG, listing nodes and their port connections.",
 		Attributes: map[string]schema.Attribute{
 			"lab_path": schema.StringAttribute{
 				Required:    true,

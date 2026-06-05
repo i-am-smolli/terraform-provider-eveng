@@ -3,12 +3,12 @@
 page_title: "eveng_folder Resource - eveng"
 subcategory: ""
 description: |-
-  
+  Manages a folder in EVE-NG. Folders are used to organize labs in a hierarchical directory structure.
 ---
 
 # eveng_folder (Resource)
 
-
+Manages a folder in EVE-NG. Folders are used to organize labs in a hierarchical directory structure.
 
 ## Example Usage
 
@@ -33,7 +33,7 @@ resource "eveng_folder" "example" {
 
 ### Required
 
-- `path` (String)
+- `path` (String) The absolute path of the folder, e.g. '/myfolder' or '/parent/child'.
 
 ## Import
 

@@ -3,12 +3,12 @@
 page_title: "eveng_node_link Resource - eveng"
 subcategory: ""
 description: |-
-  
+  Manages a connection between nodes or between a node and a network inside an EVE-NG lab. In Pro versions of EVE-NG, custom styling (color, style, curviness, width, etc.) can be configured.
 ---
 
 # eveng_node_link (Resource)
 
-
+Manages a connection between nodes or between a node and a network inside an EVE-NG lab. In Pro versions of EVE-NG, custom styling (color, style, curviness, width, etc.) can be configured.
 
 ## Example Usage
 

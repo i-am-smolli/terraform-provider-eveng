@@ -46,6 +46,7 @@ func (p *EvengProvider) Metadata(ctx context.Context, req provider.MetadataReque
 // Schema defines the provider-level schema for configuration data.
 func (p *EvengProvider) Schema(_ context.Context, _ provider.SchemaRequest, resp *provider.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "The EVE-NG provider is used to interact with the EVE-NG API to manage labs, folders, nodes, networks, and links.",
 		Attributes: map[string]schema.Attribute{
 			"host": schema.StringAttribute{
 				Optional:    true,

@@ -3,12 +3,12 @@
 page_title: "eveng_folder Data Source - eveng"
 subcategory: ""
 description: |-
-  
+  Retrieve details of a folder in EVE-NG, including its subfolders and labs.
 ---
 
 # eveng_folder (Data Source)
 
-
+Retrieve details of a folder in EVE-NG, including its subfolders and labs.
 
 ## Example Usage
 
@@ -16,7 +16,7 @@ description: |-
 terraform {
   required_providers {
     eveng = {
-      source = "CorentinPtrl/eveng"
+      source = "i-am-smolli/eveng"
     }
   }
 }
@@ -37,20 +37,20 @@ output "folder" {
 
 ### Required
 
-- `path` (String)
+- `path` (String) The absolute path of the folder to query (e.g. '/' or '/myfolder').
 
 ### Read-Only
 
-- `folders` (Attributes List) (see [below for nested schema](#nestedatt--folders))
-- `labs` (Attributes List) (see [below for nested schema](#nestedatt--labs))
+- `folders` (Attributes List) List of subfolders contained within the queried folder. (see [below for nested schema](#nestedatt--folders))
+- `labs` (Attributes List) List of labs contained within the queried folder. (see [below for nested schema](#nestedatt--labs))
 
 <a id="nestedatt--folders"></a>
 ### Nested Schema for `folders`
 
 Read-Only:
 
-- `name` (String)
-- `path` (String)
+- `name` (String) The name of the subfolder.
+- `path` (String) The absolute path of the subfolder.
 
 
 <a id="nestedatt--labs"></a>
@@ -58,7 +58,7 @@ Read-Only:
 
 Read-Only:
 
-- `file` (String)
-- `mtime` (String)
-- `path` (String)
-- `umtime` (Number)
+- `file` (String) The filename of the lab.
+- `mtime` (String) The formatted modification time of the lab.
+- `path` (String) The absolute path of the lab.
+- `umtime` (Number) The UNIX modification timestamp of the lab.

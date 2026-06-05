@@ -71,6 +71,7 @@ func (r *networkResource) Configure(_ context.Context, req resource.ConfigureReq
 // Schema defines the schema for the resource.
 func (r *networkResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages a network (bridge, cloud, etc.) inside an EVE-NG lab.",
 		Attributes: map[string]schema.Attribute{
 			"lab_path": schema.StringAttribute{
 				Required:    true,
