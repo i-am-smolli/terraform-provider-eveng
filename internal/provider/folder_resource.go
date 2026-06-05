@@ -65,9 +65,11 @@ func (r *folderResource) Configure(_ context.Context, req resource.ConfigureRequ
 // Schema defines the schema for the resource.
 func (r *folderResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages a folder in EVE-NG. Folders are used to organize labs in a hierarchical directory structure.",
 		Attributes: map[string]schema.Attribute{
 			"path": schema.StringAttribute{
-				Required: true,
+				Required:    true,
+				Description: "The absolute path of the folder, e.g. '/myfolder' or '/parent/child'.",
 			},
 		},
 	}

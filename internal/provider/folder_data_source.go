@@ -70,38 +70,48 @@ func (d *folderDataSource) Configure(_ context.Context, req datasource.Configure
 
 func (d *folderDataSource) Schema(_ context.Context, _ datasource.SchemaRequest, resp *datasource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Retrieve details of a folder in EVE-NG, including its subfolders and labs.",
 		Attributes: map[string]schema.Attribute{
 			"path": schema.StringAttribute{
-				Required: true,
+				Required:    true,
+				Description: "The absolute path of the folder to query (e.g. '/' or '/myfolder').",
 			},
 			"folders": schema.ListNestedAttribute{
-				Computed: true,
+				Computed:    true,
+				Description: "List of subfolders contained within the queried folder.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"name": schema.StringAttribute{
-							Computed: true,
+							Computed:    true,
+							Description: "The name of the subfolder.",
 						},
 						"path": schema.StringAttribute{
-							Computed: true,
+							Computed:    true,
+							Description: "The absolute path of the subfolder.",
 						},
 					},
 				},
 			},
 			"labs": schema.ListNestedAttribute{
-				Computed: true,
+				Computed:    true,
+				Description: "List of labs contained within the queried folder.",
 				NestedObject: schema.NestedAttributeObject{
 					Attributes: map[string]schema.Attribute{
 						"file": schema.StringAttribute{
-							Computed: true,
+							Computed:    true,
+							Description: "The filename of the lab.",
 						},
 						"path": schema.StringAttribute{
-							Computed: true,
+							Computed:    true,
+							Description: "The absolute path of the lab.",
 						},
 						"umtime": schema.Int64Attribute{
-							Computed: true,
+							Computed:    true,
+							Description: "The UNIX modification timestamp of the lab.",
 						},
 						"mtime": schema.StringAttribute{
-							Computed: true,
+							Computed:    true,
+							Description: "The formatted modification time of the lab.",
 						},
 					},
 				},

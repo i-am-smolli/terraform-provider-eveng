@@ -3,12 +3,12 @@
 page_title: "eveng_lab Resource - eveng"
 subcategory: ""
 description: |-
-  
+  Manages a lab in EVE-NG. Labs contain nodes, networks, and links.
 ---
 
 # eveng_lab (Resource)
 
-
+Manages a lab in EVE-NG. Labs contain nodes, networks, and links.
 
 ## Example Usage
 

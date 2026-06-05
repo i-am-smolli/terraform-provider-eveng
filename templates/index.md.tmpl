@@ -1,0 +1,16 @@
+---
+layout: ""
+page_title: "Provider: EVE-NG"
+description: |-
+  The EVE-NG provider allows you to manage folders, labs, nodes, networks, and links inside EVE-NG programmatically using Terraform.
+---
+
+# EVE-NG Provider
+
+The EVE-NG provider is used to interact with the EVE-NG (Emulated Virtual Environment Next Generation) API. It allows network engineers and infrastructure practitioners to manage EVE-NG topologies, folders, labs, nodes (virtual machines / virtualized network devices), networks (bridges/clouds), and links as code.
+
+## Example Usage
+
+{{ tffile "examples/provider/provider.tf" }}
+
+{{ .SchemaMarkdown | trimspace }}

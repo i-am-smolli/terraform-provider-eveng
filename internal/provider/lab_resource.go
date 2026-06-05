@@ -74,6 +74,7 @@ func (r *labResource) Configure(_ context.Context, req resource.ConfigureRequest
 // Schema defines the schema for the resource.
 func (r *labResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages a lab in EVE-NG. Labs contain nodes, networks, and links.",
 		Attributes: map[string]schema.Attribute{
 			"folder_path": schema.StringAttribute{
 				Optional:    true,

@@ -3,12 +3,12 @@
 page_title: "eveng_topology Data Source - eveng"
 subcategory: ""
 description: |-
-  
+  Retrieve the network topology of a specified lab in EVE-NG, listing nodes and their port connections.
 ---
 
 # eveng_topology (Data Source)
 
-
+Retrieve the network topology of a specified lab in EVE-NG, listing nodes and their port connections.
 
 ## Example Usage
 
@@ -16,7 +16,7 @@ description: |-
 terraform {
   required_providers {
     eveng = {
-      source = "CorentinPtrl/eveng"
+      source = "i-am-smolli/eveng"
     }
   }
 }

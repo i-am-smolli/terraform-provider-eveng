@@ -102,6 +102,7 @@ func (r *nodeLinkResource) Configure(_ context.Context, req resource.ConfigureRe
 // Schema defines the schema for the resource.
 func (r *nodeLinkResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages a connection between nodes or between a node and a network inside an EVE-NG lab. In Pro versions of EVE-NG, custom styling (color, style, curviness, width, etc.) can be configured.",
 		Attributes: map[string]schema.Attribute{
 			"lab_path": schema.StringAttribute{
 				Required:    true,

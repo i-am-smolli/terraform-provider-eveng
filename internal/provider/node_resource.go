@@ -94,6 +94,7 @@ func (r *nodeResource) Configure(_ context.Context, req resource.ConfigureReques
 // Schema defines the schema for the resource.
 func (r *nodeResource) Schema(_ context.Context, _ resource.SchemaRequest, resp *resource.SchemaResponse) {
 	resp.Schema = schema.Schema{
+		Description: "Manages a node (virtual machine / device) inside an EVE-NG lab. This allows running network nodes using template-defined options.",
 		Attributes: map[string]schema.Attribute{
 			"lab_path": schema.StringAttribute{
 				Required:    true,
