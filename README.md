@@ -38,7 +38,7 @@ To use the provider, add it to your Terraform configuration as follows:
 terraform {
   required_providers {
     eveng = {
-      source = "CorentinPtrl/eveng"
+      source = "i-am-smolli/eveng"
     }
   }
 }
