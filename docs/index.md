@@ -16,7 +16,7 @@ terraform {
   required_providers {
     eveng = {
       source  = "i-am-smolli/eveng"
-      version = "0.1.8"
+      version = "~> 0.1.10"
     }
   }
 }

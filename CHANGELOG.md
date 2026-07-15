@@ -1,3 +1,8 @@
+## 0.1.10 (15.07.2026)
+
+MAINTENANCE:
+* Updated dependencies.
+
 ## 0.1.9 (05.06.2026)
 
 BUGFIX
